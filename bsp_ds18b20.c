@@ -3,7 +3,9 @@
 #include <rthw.h>
 #include "stm32f10x.h"
 #include "myconfig.h"
-
+//åŸºäºstm32f103ret7å•ç‰‡æœº
+//é‡‡ç”¨rt_threadå®æ—¶ç³»ç»Ÿ.
+//dmaæ–¹å¼æ§åˆ¶4ä¸ªioå£
 void tim4_up_preocess(void);
 static unsigned char Crc8(unsigned char* ptr, unsigned char len)   
 {  
@@ -38,26 +40,26 @@ static unsigned char Crc8(unsigned char* ptr, unsigned char len)
 #define STATE_18B20_READ_COMMAND 4
 #define STATE_18B20_READ 5
 #define STATE_18B20_WAIT 6
-#define STATE_18B20_WAIT2 7  //Ò»´Î¶ÁÈ¡Íê³ÉºóµÈ´ıÊ±¼ä
+#define STATE_18B20_WAIT2 7  //ä¸€æ¬¡è¯»å–å®Œæˆåç­‰å¾…æ—¶é—´
 #define STATE_18B20_SKIPROM2 8
 #define STATE_18B20_RESET3 9
 unsigned int Gpio_data[73];
-int dam_send_buf=0X0000000a; //Ö»Ê¹ÓÃµÍ4Î»
+int dam_send_buf=0X0000000a; //åªä½¿ç”¨ä½4ä½
 //#define dam_send_buf (GPIOC->BSRR) 
 
 int state_18b20=0;
 int process_time=0;
 int read_count=0;
-//18B20 RESET Ò»¹²Õ¼ÓÃ500us
-//500usµÍµçÆ½ÆğÊ¼ĞÅºÅ
-//ÓÉÓÚÓ²¼şÉÏÊı¾İÏßÃ»ÓĞ×öÉÏÀ­,²ÉÓÃµÄstm32µÄµ¥Æ¬»úÉÏÀ­
-//¶ÁÈ¡µÄÊ±ºòĞèÒªÇĞ»»µ½ÉÏÀ­ÊäÈëÄ£Ê½
+//18B20 RESET ä¸€å…±å ç”¨500us
+//500usä½ç”µå¹³èµ·å§‹ä¿¡å·
+//ç”±äºç¡¬ä»¶ä¸Šæ•°æ®çº¿æ²¡æœ‰åšä¸Šæ‹‰,é‡‡ç”¨çš„stm32çš„å•ç‰‡æœºä¸Šæ‹‰
+//è¯»å–çš„æ—¶å€™éœ€è¦åˆ‡æ¢åˆ°ä¸Šæ‹‰è¾“å…¥æ¨¡å¼
 int dma_set_18b20_reset(int cur_time)
 {
 //	int ret=0;
-	if(cur_time>5 && cur_time<55)  //500usµÍµçÆ½
+	if(cur_time>5 && cur_time<55)  //500usä½ç”µå¹³
 		dam_send_buf=GPIOC_4LOW_RESET;
-	else  //500usºóÀ­¸ß×ÜÏß,¶Á´æÔÚĞÅºÅ
+	else  //500usåæ‹‰é«˜æ€»çº¿,è¯»å­˜åœ¨ä¿¡å·
 	{
 		dam_send_buf=GPIOC_4LOW_SET;
 		if(cur_time==56 && state_18b20==STATE_18B20_RESET)
@@ -65,10 +67,10 @@ int dma_set_18b20_reset(int cur_time)
 	//		dam_send_buf=GPIOC_4LOW_SET;
 			DS18B201_Configuration_in2();
 		}
-		if(cur_time==61) //·¢ËÍ¶ÁÈ¡Ğ¾Æ¬´æÔÚÖ¸Áî
+		if(cur_time==61) //å‘é€è¯»å–èŠ¯ç‰‡å­˜åœ¨æŒ‡ä»¤
 		{
 			cur_time=cur_time;
-			Gpio_data[0]=GPIOC->IDR&0xF;  //¶ÁÈ¡4¸öio¿Ú×´Ì¬
+			Gpio_data[0]=GPIOC->IDR&0xF;  //è¯»å–4ä¸ªioå£çŠ¶æ€
 //			if(state_18b20==STATE_18B20_RESET)
 //			{
 //				DMA_Cmd(DMA1_Channel6,DISABLE);
@@ -80,16 +82,16 @@ int dma_set_18b20_reset(int cur_time)
 	}
 	return 0;
 }
-//ÑÓÊ±ÓÃ
+//å»¶æ—¶ç”¨
 int dma_set_18b20_reset3(int cur_time)
 {
 		dam_send_buf=GPIOC_4LOW_SET;
 		return 0;
 }
 
-//18B20 ÌøROM Ò»¹²Õ¼ÓÃ400us  0b11001100
-//Ò»¸öÎ»10usµÍµçÆ½ÆğÊ¼ĞÅºÅ,40usÊı¾İ,10us¼ä¸ô
-//0XXXX1  ·¢ËÍÒ»¸öÎ»µÄÊı¾İ.xÓÉ·¢ËÍµÄÊı¾İ¾ö¶¨
+//18B20 è·³ROM ä¸€å…±å ç”¨400us  0b11001100
+//ä¸€ä¸ªä½10usä½ç”µå¹³èµ·å§‹ä¿¡å·,40usæ•°æ®,10usé—´éš”
+//0XXXX1  å‘é€ä¸€ä¸ªä½çš„æ•°æ®.xç”±å‘é€çš„æ•°æ®å†³å®š
 int dma_set_18b20_skiprom(int cur_time)
 {
 	int ret=cur_time%6;
@@ -109,9 +111,9 @@ int dma_set_18b20_skiprom(int cur_time)
 	return 0;
 }
 
-//18B20 Æô¶¯×ª»»Ò»¹²Õ¼ÓÃ500us  0b0100 0100
-//Ò»¸öÎ»10usµÍµçÆ½ÆğÊ¼ĞÅºÅ40usÊı¾İ10us¼ä¸ô
-//0XXXX1  ·¢ËÍÒ»¸öÎ»µÄÊı¾İ.xÓÉ·¢ËÍµÄÊı¾İ¾ö¶¨
+//18B20 å¯åŠ¨è½¬æ¢ä¸€å…±å ç”¨500us  0b0100 0100
+//ä¸€ä¸ªä½10usä½ç”µå¹³èµ·å§‹ä¿¡å·40usæ•°æ®10usé—´éš”
+//0XXXX1  å‘é€ä¸€ä¸ªä½çš„æ•°æ®.xç”±å‘é€çš„æ•°æ®å†³å®š
 int dma_set_18b20_Convert(int cur_time)
 {
 	int ret=cur_time%6;
@@ -131,9 +133,9 @@ int dma_set_18b20_Convert(int cur_time)
 	return 0;
 }
 
-//18B20 ·¢ËÍ¶ÁromÖ¸ÁîÒ»¹²Õ¼ÓÃ500us  0b1011 1110
-//Ò»¸öÎ»10usµÍµçÆ½ÆğÊ¼ĞÅºÅ,40usÊı¾İ,10us¼ä¸ô
-//0XXXX1  ·¢ËÍÒ»¸öÎ»µÄÊı¾İ.xÓÉ·¢ËÍµÄÊı¾İ¾ö¶¨
+//18B20 å‘é€è¯»romæŒ‡ä»¤ä¸€å…±å ç”¨500us  0b1011 1110
+//ä¸€ä¸ªä½10usä½ç”µå¹³èµ·å§‹ä¿¡å·,40usæ•°æ®,10usé—´éš”
+//0XXXX1  å‘é€ä¸€ä¸ªä½çš„æ•°æ®.xç”±å‘é€çš„æ•°æ®å†³å®š
 int dma_set_18b20_read_command(int cur_time)
 {
 	int ret=cur_time%6;
@@ -152,9 +154,9 @@ int dma_set_18b20_read_command(int cur_time)
 	return 0;
 }
 
-//18B20 ¶Á9×Ö½ÚÊı¾İ 10usµÍµçÆ½(¿ªÊ¼¶Á)30usÄÚ¶ÁÊı¾İ
-//Ã¿¸öÎ»Õ¼ÓÃ(40)  Ò»¹²ĞèÒª40*8*9=2160us.
-//0111   µÚ¶ş¸ö¸ßµçÆ½¶ÁÊı¾İ
+//18B20 è¯»9å­—èŠ‚æ•°æ® 10usä½ç”µå¹³(å¼€å§‹è¯»)30uså†…è¯»æ•°æ®
+//æ¯ä¸ªä½å ç”¨(40)  ä¸€å…±éœ€è¦40*8*9=2160us.
+//0111   ç¬¬äºŒä¸ªé«˜ç”µå¹³è¯»æ•°æ®
 int dma_set_18b20_read(int cur_time)
 {
 	int ret=cur_time%4;
@@ -164,11 +166,11 @@ int dma_set_18b20_read(int cur_time)
 	{
 		dam_send_buf=GPIOC_4LOW_SET;
 		if(ret==2)
-		{//·¢ËÍ¶ÁÈ¡Êı¾İÖ¸Áî
+		{//å‘é€è¯»å–æ•°æ®æŒ‡ä»¤
 //			DMA_Cmd(DMA1_Channel6,DISABLE);
 //			DMA_SetCurrDataCounter(DMA1_Channel6,4);
 //			DMA_Cmd(DMA1_Channel6,ENABLE);
-			//ÅäÖÃ18b20Êı¾İ¶Ë¿ÚÎªÊäÈë
+			//é…ç½®18b20æ•°æ®ç«¯å£ä¸ºè¾“å…¥
 			DS18B201_Configuration_in2();
 			Gpio_data[read_count]=GPIOC->IDR&0xF;
 			GPIO_18B20_init();
@@ -190,23 +192,23 @@ char tim4_init(void)
 	TIM_TimeBaseStructure.TIM_Period = 10-1;
 	
 	TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
-	//Ô¤×°ÔØÊ¹ÄÜ
+	//é¢„è£…è½½ä½¿èƒ½
 	TIM_ARRPreloadConfig(TIM4, ENABLE);
 
 #if 1
-	//====================================ÖĞ¶Ï³õÊ¼»¯===========================
-	//ÉèÖÃNVICÓÅÏÈ¼¶·Ö×éÎªGroup2£º0-3ÇÀÕ¼Ê½ÓÅÏÈ¼¶£¬0-3µÄÏìÓ¦Ê½ÓÅÏÈ¼¶
+	//====================================ä¸­æ–­åˆå§‹åŒ–===========================
+	//è®¾ç½®NVICä¼˜å…ˆçº§åˆ†ç»„ä¸ºGroup2ï¼š0-3æŠ¢å å¼ä¼˜å…ˆçº§ï¼Œ0-3çš„å“åº”å¼ä¼˜å…ˆçº§
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
 	NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
-	//Çå³ıÒç³öÖĞ¶Ï±êÖ¾Î»
+	//æ¸…é™¤æº¢å‡ºä¸­æ–­æ ‡å¿—ä½
 	TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
-	//¶¨Ê±Æ÷3Òç³öÖĞ¶Ï¹Ø±Õ
+	//å®šæ—¶å™¨3æº¢å‡ºä¸­æ–­å…³é—­
 	TIM_ITConfig(TIM4, TIM_IT_Update, ENABLE);
-	//¶¨Ê±Æ÷3½ûÄÜ
+	//å®šæ—¶å™¨3ç¦èƒ½
 	TIM_Cmd(TIM4, ENABLE);
 #endif
 	
@@ -218,8 +220,8 @@ void TIM4_IRQHandler(void)
 	if (TIM_GetITStatus(TIM4, TIM_IT_Update) != RESET)
 	{
 		
-		TIM_ClearFlag(TIM4, TIM_FLAG_Update);		 //ÇåÖĞ¶Ï±ê¼Ç
-		TIM_ClearITPendingBit(TIM4, TIM_IT_Update);  //Çå³ı¶¨Ê±Æ÷TIM2Òç³öÖĞ¶Ï±êÖ¾Î»
+		TIM_ClearFlag(TIM4, TIM_FLAG_Update);		 //æ¸…ä¸­æ–­æ ‡è®°
+		TIM_ClearITPendingBit(TIM4, TIM_IT_Update);  //æ¸…é™¤å®šæ—¶å™¨TIM2æº¢å‡ºä¸­æ–­æ ‡å¿—ä½
 		tim4_up_preocess();
 	}
 	rt_interrupt_leave();
@@ -272,7 +274,7 @@ void temp_analasis(void)
 				check_error_count[i]=101;
 			continue;
 		}
-		else //18b20´æÔÚ
+		else //18b20å­˜åœ¨
 		{
 			warning.data&=~(1<<i);
 			check_error_count[i]=0;
@@ -283,7 +285,7 @@ void temp_analasis(void)
 					temp_receive_byte[j/8]=temp_receive_byte[j/8]<<1;
 			}
 		}
-		if(Crc8(temp_receive_byte, 8)==(unsigned char)temp_receive_byte[8]) //crcĞ£Ñé
+		if(Crc8(temp_receive_byte, 8)==(unsigned char)temp_receive_byte[8]) //crcæ ¡éªŒ
 		{
 			temp=(short)((temp_receive_byte[1]<<8)+temp_receive_byte[0]);
 			if(SYH_abs(temp-getro(CURTMP_YUANSHI+i))<100)
@@ -407,7 +409,7 @@ void tim4_up_preocess()
 
 }
 
-//ÅäÖÃ18b20Êı¾İ¶Ë¿ÚÎªÊäÈë
+//é…ç½®18b20æ•°æ®ç«¯å£ä¸ºè¾“å…¥
 void DS18B201_Configuration_in2() 
 { 
 	GPIO_InitTypeDef GPIO_InitStructure; 
@@ -416,7 +418,7 @@ void DS18B201_Configuration_in2()
 
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0|GPIO_Pin_1|GPIO_Pin_2|GPIO_Pin_3; 
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU; //
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz; //2MÊ±ÖÓËÙ¶È 
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz; //2Mæ—¶é’Ÿé€Ÿåº¦ 
 	GPIO_Init(GPIOC, &GPIO_InitStructure); 
 } 
 
@@ -427,8 +429,8 @@ void GPIO_18B20_init()
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE); 
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0|GPIO_Pin_8|GPIO_Pin_1|GPIO_Pin_2
 		|GPIO_Pin_3|GPIO_Pin_9|GPIO_Pin_10|GPIO_Pin_11; 
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; //ÍÆÍìÊä³ö
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; //2MÊ±ÖÓËÙ¶È 
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; //æ¨æŒ½è¾“å‡º
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; //2Mæ—¶é’Ÿé€Ÿåº¦ 
 	GPIO_Init(GPIOC, &GPIO_InitStructure); 
 	GPIO_SetBits(GPIOC,GPIO_Pin_8) ;
 	GPIO_SetBits(GPIOC,GPIO_Pin_9) ;
@@ -436,7 +438,7 @@ void GPIO_18B20_init()
 }
 static void dma_18b20_process(void* parameter)
 {
-	#define SCAN_TIME 100  //50msÒ»´Î
+	#define SCAN_TIME 100  //50msä¸€æ¬¡
 //	int temp=0;
 	GPIO_18B20_init();
 	tim4_init();
