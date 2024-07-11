@@ -44,8 +44,7 @@ static unsigned char Crc8(unsigned char* ptr, unsigned char len)
 #define STATE_18B20_SKIPROM2 8
 #define STATE_18B20_RESET3 9
 unsigned int Gpio_data[73];
-int dam_send_buf=0X0000000a; //只使用低4位
-//#define dam_send_buf (GPIOC->BSRR) 
+int dam_send_buf=0X0000000a; //只使用低4 
 
 int state_18b20=0;
 int process_time=0;
