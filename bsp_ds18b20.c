@@ -2,7 +2,6 @@
 #include <rtthread.h>
 #include <rthw.h>
 #include "stm32f10x.h"
-#include "myconfig.h"
 //基于stm32f103ret7单片机
 //采用rt_thread实时系统.
 //dma方式控制4个io口
